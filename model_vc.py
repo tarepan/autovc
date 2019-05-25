@@ -5,9 +5,9 @@ import numpy as np
 
 
 class LinearNorm(torch.nn.Module):
-    def __init__(self, in_dim, out_dim, bias=True, w_init_gain='linear'):
+    def __init__(self, in_dim, out_dim, w_init_gain='linear'):
         super(LinearNorm, self).__init__()
-        self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=bias)
+        self.linear_layer = torch.nn.Linear(in_dim, out_dim, bias=True)
 
         torch.nn.init.xavier_uniform_(
             self.linear_layer.weight,
@@ -17,25 +17,28 @@ class LinearNorm(torch.nn.Module):
         return self.linear_layer(x)
 
 
+"""[summary]
+Wrapper of nn.Conv1d
+Returns:
+    [type] -- [description]
+"""
 class ConvNorm(torch.nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size=1, stride=1,
-                 padding=None, dilation=1, bias=True, w_init_gain='linear'):
+                 padding=None, w_init_gain='linear'):
         super(ConvNorm, self).__init__()
         if padding is None:
             assert(kernel_size % 2 == 1)
-            padding = int(dilation * (kernel_size - 1) / 2)
+            padding = int((kernel_size - 1) / 2)
 
         self.conv = torch.nn.Conv1d(in_channels, out_channels,
                                     kernel_size=kernel_size, stride=stride,
-                                    padding=padding, dilation=dilation,
-                                    bias=bias)
+                                    padding=padding, bias=True)
 
         torch.nn.init.xavier_uniform_(
             self.conv.weight, gain=torch.nn.init.calculate_gain(w_init_gain))
 
     def forward(self, signal):
-        conv_signal = self.conv(signal)
-        return conv_signal
+        return self.conv(signal)
 
 
 class Encoder(nn.Module):
@@ -53,7 +56,7 @@ class Encoder(nn.Module):
                          512,
                          kernel_size=5, stride=1,
                          padding=2,
-                         dilation=1, w_init_gain='relu'),
+                          w_init_gain='relu'),
                 nn.BatchNorm1d(512))
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
@@ -96,7 +99,7 @@ class Decoder(nn.Module):
                          dim_pre,
                          kernel_size=5, stride=1,
                          padding=2,
-                         dilation=1, w_init_gain='relu'),
+                         w_init_gain='relu'),
                 nn.BatchNorm1d(dim_pre))
             convolutions.append(conv_layer)
         self.convolutions = nn.ModuleList(convolutions)
@@ -136,7 +139,7 @@ class Postnet(nn.Module):
                 ConvNorm(80, 512,
                          kernel_size=5, stride=1,
                          padding=2,
-                         dilation=1, w_init_gain='tanh'),
+                         w_init_gain='tanh'),
                 nn.BatchNorm1d(512))
         )
 
@@ -147,7 +150,7 @@ class Postnet(nn.Module):
                              512,
                              kernel_size=5, stride=1,
                              padding=2,
-                             dilation=1, w_init_gain='tanh'),
+                             w_init_gain='tanh'),
                     nn.BatchNorm1d(512))
             )
 
@@ -156,7 +159,7 @@ class Postnet(nn.Module):
                 ConvNorm(512, 80,
                          kernel_size=5, stride=1,
                          padding=2,
-                         dilation=1, w_init_gain='linear'),
+                         w_init_gain='linear'),
                 nn.BatchNorm1d(80))
             )
 
